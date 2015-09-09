@@ -9,12 +9,16 @@ import resource
 import codecs
 import random
 from collections import defaultdict
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #variable---------------------------------------------------------------------------------
 Hall_dic = []
 Point_dic = []
 D = defaultdict(lambda: defaultdict(int))
 #各場所における入出時刻 D[hall][point]
+max_time = -10 ** 14
+min_time = 10 ** 14
 #-----------------------------------------------------------------------------------------
 
 
@@ -39,6 +43,11 @@ for row in fin:
     e_time = int((dt.datetime.strptime(temp[4],'%Y/%m/%d %H:%M:%S') - dt.datetime(1899,12,31)).seconds)
     #経過時間（秒）に変換
 
+    if min_time > s_time:
+        min_time = s_time
+    if max_time < e_time:
+        max_time = e_time
+
     if np.size(D[Hall][Point]) == 1:
         d = np.array([s_time, e_time, e_time - s_time])
         D[Hall][Point] = d
@@ -51,6 +60,24 @@ fin.close()
 print "Input time:%f" % (time()-t0)
 #-----------------------------------------------------------------------------------------
 
+
+#-----------------------------------------------------------------------------------------
+NX = max_time - min_time + 1
+X = np.arange(0, NX)
+X = X * 0.0001
+x = np.concatenate( (X,X[::-1]) )
+Y = np.zeros(np.size(X))
+
+SubD = D[2][1]
+I = np.shape(SubD)[0]
+Y2 = np.zeros(np.size(X))
+for i in range(I):
+    T = SubD[i][0] - min_time
+    Y2[T] = 0.4
+y = np.concatenate( (Y,Y2[::-1]) )
+
+fig = plt.figure()
+plt.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
 
 
 
