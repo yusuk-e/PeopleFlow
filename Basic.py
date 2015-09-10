@@ -227,7 +227,6 @@ def survival():
                 T[i] = SubD[i][0] - min_time
             
             S = SubD[:,2]
-            pdb.set_trace()
             fig = plt.figure(figsize=(16,9))
             plt.title('Hall' + str(Hall) + '  Point' + str(Point))
             plt.xlabel('time')
@@ -235,8 +234,8 @@ def survival():
             fig.savefig('survival/survival_Hall' + str(Hall) + ' Point' +str(Point) + '.png')
 
 input()
-birth_series()
-death_series()
-survival()
+#birth_series()
+#death_series()
+#survival()
 
 pdb.set_trace()
