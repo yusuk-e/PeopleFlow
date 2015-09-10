@@ -54,13 +54,15 @@ def input():
         if max_time < e_time:
             max_time = e_time
 
+        delta = e_time - s_time
         if np.size(D[Hall][Point]) == 1:
-            d = np.array([s_time, e_time, e_time - s_time])
-            D[Hall][Point] = d
-
+            if delta != 0:
+                d = np.array([s_time, e_time, delta])
+                D[Hall][Point] = d
         else:
-            d = np.array([s_time, e_time, e_time - s_time])
-            D[Hall][Point] = np.vstack([D[Hall][Point],d])
+            if delta != 0:
+                d = np.array([s_time, e_time, delta])
+                D[Hall][Point] = np.vstack([D[Hall][Point],d])
 
     fin.close()
     print "Input time:%f" % (time()-t0)
