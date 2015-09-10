@@ -11,11 +11,14 @@ import random
 from collections import defaultdict
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from lifelines.plotting import plot_lifetimes
+from numpy.random import uniform, exponential
 
 #variable---------------------------------------------------------------------------------
 Hall_dic = []
-Point_dic = []
+Point_dic = defaultdict(int)
 D = defaultdict(lambda: defaultdict(int))
+N = defaultdict(lambda: defaultdict(int))
 #各場所における入出時刻 D[hall][point]
 max_time = -10 ** 14
 min_time = 10 ** 14
@@ -23,149 +26,213 @@ min_time = 10 ** 14
 
 
 #Input------------------------------------------------------------------------------------
-t0 = time()
-filename = "Data/5min/hall_ap_id_st_ed_5minT.csv"
+def input():
+    global max_time, min_time
+    t0 = time()
+    filename = "Data/5min/hall_ap_id_st_ed_5minT.csv"
 
-fin = open(filename)
-for row in fin:
-    temp = row.rstrip("\r\n").split(",")
-    for j in range(len(temp)):
-        if j == 0:
-            Hall = int(temp[j])
-            if Hall not in Hall_dic:
-                Hall_dic.append(Hall)
-        elif j == 1:
-            Point = int(temp[j])
-            if Point not in Point_dic:
-                Point_dic.append(Point)
+    fin = open(filename)
+    for row in fin:
+        temp = row.rstrip("\r\n").split(",")
+        for j in range(len(temp)):
+            if j == 0:
+                Hall = int(temp[j])
+                if Hall not in Hall_dic:
+                    Hall_dic.append(Hall)
+                    Point_dic[Hall] = []
+            elif j == 1:
+                Point = int(temp[j])
+                if Point not in Point_dic[Hall]:
+                    Point_dic[Hall].append(Point)
 
-    s_time = int((dt.datetime.strptime(temp[3],'%Y/%m/%d %H:%M:%S') - dt.datetime(1899,12,31)).seconds)
-    e_time = int((dt.datetime.strptime(temp[4],'%Y/%m/%d %H:%M:%S') - dt.datetime(1899,12,31)).seconds)
-    #経過時間（秒）に変換
+        s_time = int((dt.datetime.strptime(temp[3],'%Y/%m/%d %H:%M:%S') - dt.datetime(1899,12,31)).seconds)
+        e_time = int((dt.datetime.strptime(temp[4],'%Y/%m/%d %H:%M:%S') - dt.datetime(1899,12,31)).seconds)
+        #経過時間（秒）に変換
 
-    if min_time > s_time:
-        min_time = s_time
-    if max_time < e_time:
-        max_time = e_time
+        if min_time > s_time:
+            min_time = s_time
+        if max_time < e_time:
+            max_time = e_time
 
-    if np.size(D[Hall][Point]) == 1:
-        d = np.array([s_time, e_time, e_time - s_time])
-        D[Hall][Point] = d
+        if np.size(D[Hall][Point]) == 1:
+            d = np.array([s_time, e_time, e_time - s_time])
+            D[Hall][Point] = d
 
-    else:
-        d = np.array([s_time, e_time, e_time - s_time])
-        D[Hall][Point] = np.vstack([D[Hall][Point],d])
+        else:
+            d = np.array([s_time, e_time, e_time - s_time])
+            D[Hall][Point] = np.vstack([D[Hall][Point],d])
 
-fin.close()
-print "Input time:%f" % (time()-t0)
+    fin.close()
+    print "Input time:%f" % (time()-t0)
 #-----------------------------------------------------------------------------------------
 
+#birth_series-----------------------------------------------------------------------------
+def birth_series():
+    NX = max_time - min_time + 1
+    X = np.arange(0, NX)
+    X = X * 0.0001
+    x = np.concatenate( (X,X[::-1]) )
+    Y = np.zeros(np.size(X))
 
+    counter = 0
+    counter2 = 0
+    for h in range(len(Hall_dic)):
+        Hall = Hall_dic[h]
+        SubPoint = Point_dic[Hall]
+        for p in range(len(SubPoint)):
+            Point = SubPoint[p]
+            SubD = D[Hall][Point]
+
+            I = np.shape(SubD)[0]
+            N[Hall][Point] = I
+
+            Y2 = np.zeros(np.size(X))
+            for i in range(I):
+                T = SubD[i][0] - min_time
+                Y2[T] = 0.4
+            y = np.concatenate( (Y,Y2[::-1]) )
+
+            if counter == 0:
+                fig = plt.figure(figsize=(16,9))
+                plt.subplots_adjust(hspace=1.0)
+                ax1 = fig.add_subplot(611)
+                ax2 = fig.add_subplot(612)
+                ax3 = fig.add_subplot(613)
+                ax4 = fig.add_subplot(614)
+                ax5 = fig.add_subplot(615)
+                ax6 = fig.add_subplot(616)
+
+                p = ax1.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax1.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax1.axis('off')
+                counter += 1
+            elif counter == 1:
+                p = ax2.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax2.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax2.axis('off')
+                counter += 1
+            elif counter == 2:
+                p = ax3.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax3.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax3.axis('off')
+                counter += 1
+            elif counter == 3:
+                p = ax4.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax4.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax4.axis('off')
+                counter += 1
+            elif counter == 4:
+                p = ax5.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax5.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax5.axis('off')
+                counter += 1
+            elif counter == 5:
+                p = ax6.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax6.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax6.axis('off')
+                counter = 0
+                plt.savefig('birth_series/birth_series' + str(counter2) + '.png')
+                counter2 += 1
+                plt.close()
 #-----------------------------------------------------------------------------------------
-NX = max_time - min_time + 1
-X = np.arange(0, NX)
-X = X * 0.0001
-x = np.concatenate( (X,X[::-1]) )
-Y = np.zeros(np.size(X))
 
-SubD = D[2][1]
-I = np.shape(SubD)[0]
-Y2 = np.zeros(np.size(X))
-for i in range(I):
-    T = SubD[i][0] - min_time
-    Y2[T] = 0.4
-y = np.concatenate( (Y,Y2[::-1]) )
+#death_series-----------------------------------------------------------------------------
+def death_series():
+    NX = max_time - min_time + 1
+    X = np.arange(0, NX)
+    X = X * 0.0001
+    x = np.concatenate( (X,X[::-1]) )
+    Y = np.zeros(np.size(X))
 
-fig = plt.figure()
-plt.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+    counter = 0
+    counter2 = 0
+    for h in range(len(Hall_dic)):
+        Hall = Hall_dic[h]
+        SubPoint = Point_dic[Hall]
+        for p in range(len(SubPoint)):
+            Point = SubPoint[p]
+            SubD = D[Hall][Point]
 
+            I = np.shape(SubD)[0]
+            N[Hall][Point] = I
 
+            Y2 = np.zeros(np.size(X))
+            for i in range(I):
+                T = SubD[i][1] - min_time
+                Y2[T] = 0.4
+            y = np.concatenate( (Y,Y2[::-1]) )
 
+            if counter == 0:
+                fig = plt.figure(figsize=(16,9))
+                plt.subplots_adjust(hspace=1.0)
+                ax1 = fig.add_subplot(611)
+                ax2 = fig.add_subplot(612)
+                ax3 = fig.add_subplot(613)
+                ax4 = fig.add_subplot(614)
+                ax5 = fig.add_subplot(615)
+                ax6 = fig.add_subplot(616)
 
-
-
-
-'''
-Group_dic_inv = dict([(v,k) for k,v in Group_dic.items()])
-Item_dic_inv = dict([(v,k) for k,v in Item_dic.items()])
-
-MAX_TIME = max(D[:,4])
+                p = ax1.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax1.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax1.axis('off')
+                counter += 1
+            elif counter == 1:
+                p = ax2.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax2.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax2.axis('off')
+                counter += 1
+            elif counter == 2:
+                p = ax3.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax3.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax3.axis('off')
+                counter += 1
+            elif counter == 3:
+                p = ax4.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax4.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax4.axis('off')
+                counter += 1
+            elif counter == 4:
+                p = ax5.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax5.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax5.axis('off')
+                counter += 1
+            elif counter == 5:
+                p = ax6.fill(x,y, facecolor = 'k')#, edgecolor = 'none')
+                ax6.set_title('Hall' + str(Hall) + '  Point' + str(Point))
+                ax6.axis('off')
+                counter = 0
+                plt.savefig('death_series/death_series' + str(counter2) + '.png')
+                counter2 += 1
+                plt.close()
 #-----------------------------------------------------------------------------------------
-View_Time_th = 30
-D_View_Trend = D[np.where(D[:,4] > (MAX_TIME - View_Time_th))[0],:]
-P_View = defaultdict(float)
-for i in range(np.shape(D_View_Trend)[0]):
-    Item_id = D_View_Trend[i,2]
-    P_View[int(Item_id)] += 1
 
-Recommend_Item = np.zeros([100,2])
-counter = 0
-counter2 = 0
-A = sorted(P_View.items(), key=lambda x:x[1], reverse=True)
-for i in range(1000000):
-    Item_id = A[i][0]
-    Item_value = A[i][1]
-    if int(Item_dic_inv[Item_id]) not in RECOMMEND_Possi:
-        counter2 += 1
-    elif int(Item_dic_inv[Item_id]) in RECOMMEND_Possi:
-        Recommend_Item[counter,0] = Item_id
-        Recommend_Item[counter,1] = Item_value
-        counter += 1
-    if counter == 100:
-        break
-Recommend_Item[:,1] = Recommend_Item[:,1] / np.sum(Recommend_Item[:,1])
-pdb.set_trace()
+#survival---------------------------------------------------------------------------------
+def survival():
+    for h in range(len(Hall_dic)):
+        Hall = Hall_dic[h]
+        SubPoint = Point_dic[Hall]
+        for p in range(len(SubPoint)):
+            Point = SubPoint[p]
+            SubD = D[Hall][Point]
+            T = np.zeros(np.shape(SubD)[0])
 
-Output = np.zeros([1,3])
-for Group_id in Group_dic.itervalues():
-    G = np.zeros([100,1])
-    G[:] = Group_id
-    temp = np.hstack((G,Recommend_Item))
-    Output = np.vstack((Output,temp))
-Output = np.delete(Output,0,0)
+            I = np.shape(SubD)[0]
+            N[Hall][Point] = I
 
-D_Buy = D[np.where(D[:,3] == 1)[0],:]
-Buy_Time_th = 90
-D_Buy_Trend = D[np.where(D[:,4] > (MAX_TIME - Buy_Time_th))[0],:]
-P_Buy = defaultdict(lambda: defaultdict(float))
-N_Buy = defaultdict(float)
-for i in range(np.shape(D_Buy_Trend)[0]):
-    Group_id = D_Buy_Trend[i,0]
-    Item_id = D_Buy_Trend[i,2]
-    if Item_id in Recommend_Item[:,0]:
-        P_Buy[int(Group_id)][int(Item_id)] += 1
-        N_Buy[int(Group_id)] += 1
+            for i in range(I):
+                T[i] = SubD[i][0] - min_time
+            
+            S = SubD[:,2]
 
-counter = 0
-NewOutput = np.zeros([np.shape(Output)[0],4])
-for Group_id in Group_dic.itervalues():
-    for Item_id in Item_dic.itervalues():
-        if Item_id in Recommend_Item[:,0]:
-            NewOutput[counter,0] = int(Group_dic_inv[Output[counter,0]])
-            NewOutput[counter,1] = int(Item_dic_inv[Output[counter,1]])
-            NewOutput[counter,2] = Output[counter,2]
-            NewOutput[counter,3] = P_Buy[Group_id][Item_id] / N_Buy[Group_id]
-            counter += 1
+            fig = plt.figure(figsize=(16,9))
+            plt.title('Hall' + str(Hall) + '  Point' + str(Point))
+            plt.xlabel('time')
+            plot_lifetimes(S, birthtimes=T)
+            fig.savefig('survival/survival_Hall' + str(Hall) + ' Point' +str(Point) + '.png')
 
-index = np.unique(NewOutput[:,0])
-N2Output = np.zeros([1,4])
-for i in range(len(index)):
-    N2Output = np.vstack((N2Output,NewOutput[np.where(NewOutput[:,0] == index[i])[0],:]))
-N2Output = np.delete(N2Output,0,0)
-
-filename = "Output.csv"
-fout = open(filename,'w')
-for i in range(np.shape(N2Output)[0]):
-    fout.write(str(int(N2Output[i,0])))
-    fout.write(",")
-    fout.write(str(int(N2Output[i,1])))
-    fout.write(",")
-    fout.write(str(N2Output[i,2]))
-    fout.write(",")
-    fout.write(str(N2Output[i,3]))
-    fout.write("\n")
-fout.close()
-'''                   
-
+input()
+#birth_series()
+#death_series()
+survival()
 
 pdb.set_trace()
