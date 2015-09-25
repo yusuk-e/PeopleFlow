@@ -57,12 +57,12 @@ def input():
         delta = e_time - s_time
         if np.size(D[Hall][Point]) == 1:
 #            if delta != 0:
-            if delta > 60:
+            if delta > 120:
                 d = np.array([s_time, e_time, delta])
                 D[Hall][Point] = d
         else:
 #            if delta != 0:
-            if delta > 60:
+            if delta > 120:
                 d = np.array([s_time, e_time, delta])
                 D[Hall][Point] = np.vstack([D[Hall][Point],d])
 
@@ -222,11 +222,11 @@ def survival():
 
             I = np.shape(SubD)[0]
             N[Hall][Point] = I
-
             for i in range(I):
                 T[i] = SubD[i][0] - min_time
             
             S = SubD[:,2]
+
             fig = plt.figure(figsize=(16,9))
             plt.title('Hall' + str(Hall) + '  Point' + str(Point))
             plt.xlabel('time')
@@ -236,6 +236,6 @@ def survival():
 input()
 #birth_series()
 #death_series()
-#survival()
+survival()
 
 pdb.set_trace()
